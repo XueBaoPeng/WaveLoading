@@ -14,7 +14,6 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 /**
  * Created by Administrator on 2017/7/4.
@@ -30,10 +29,7 @@ public class CoustomView extends View {
     private Path mPath;//水波纹
     private Paint mPathPaint;
 
-    private float mWaveHeight = 10f;//水波纹高度
-    private float mWaveHalfWidth = 100f;//水波纹宽度
     private String mWaveColor = "#5be4ef";
-    private int mWaveSpeed = 30;
 
     private Paint mTextPaint;
     private String mCurrentText = "";
@@ -46,7 +42,8 @@ public class CoustomView extends View {
 
     private float mDistance = 0;
     private int mRefreshGap = 10;
-
+    private int mFu;//水波纹的振幅
+    private int mOffset;//水波纹移动的偏移值
     /**
      * Y方向上的每次增长值
      */
@@ -72,20 +69,9 @@ public class CoustomView extends View {
         this.mTextSize = mTextSize;
     }
 
-    //设置波浪的高度和波浪的宽度（均为一个波峰的大小）
-    public void setWave(float mWaveHight, float mWaveWidth) {
-        this.mWaveHeight = mWaveHight;
-        this.mWaveHalfWidth = mWaveWidth / 2;
-    }
-
     //设置水波的颜色
     public void setWaveColor(String mWaveColor) {
         this.mWaveColor = mWaveColor;
-    }
-
-    //设置波浪的上下震动的速度（这里注意值越大，震动的越小）
-    public void setWaveSpeed(int mWaveSpeed) {
-        this.mWaveSpeed = mWaveSpeed;
     }
 
     public void allowProgressInBothDirections(boolean allow) {
@@ -125,22 +111,22 @@ public class CoustomView extends View {
         mTextPaint.setAntiAlias(true);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
-//        ValueAnimator valueAnimator = ValueAnimator.ofInt(0, mMaxProgress);
-//        valueAnimator.setDuration(4000);
-//        valueAnimator.setInterpolator(new LinearInterpolator());
-//        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
-//        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-//            @Override
-//            public void onAnimationUpdate(ValueAnimator animation) {
-//                mCurrentProgress = (int) animation.getAnimatedValue();
-//                invalidate();
-//            }
-//        });
-//
-//        valueAnimator.setCurrentPlayTime(2000);
-//        valueAnimator.start();
+        ValueAnimator animator = ValueAnimator.ofInt(0, mWidth);//设置移动范围为一个屏幕宽度
+        animator.setDuration(1000);//设置持续时间为1秒
+        animator.setRepeatCount(ValueAnimator.INFINITE);//设置为无限循环
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int value = (int) animation.getAnimatedValue();
+                mOffset = value;//修改偏移量
+                invalidate();//刷新界面
+            }
+        });
+        animator.start();
         mBezierDiffX = INCREATE_WIDTH;
         mWaveLowestY = 1.2f * mHeight;
+        mOffset = 0;//水波纹移动的偏移值
+        mFu = 100;//波浪的振幅
     }
 
     @Override
@@ -188,6 +174,7 @@ public class CoustomView extends View {
      * 当前波纹的y值
      */
     private float mWaveY;
+
     private Bitmap createBitmap() {
         mPathPaint.setColor(Color.parseColor(mWaveColor));
         mTextPaint.setColor(Color.parseColor(mTextColor));
@@ -206,20 +193,36 @@ public class CoustomView extends View {
 
         Canvas canvas = new Canvas(finalBmp);
 
-        float CurMidY = mHeight * (mMaxProgress - mCurrentProgress) / mMaxProgress;
-        if (mAllowProgressInBothDirections || mWaveY > CurMidY) {
-            mWaveY = mWaveY - (mWaveY - CurMidY) / 10;
-            mWaveLowestY = mWaveLowestY - (mWaveLowestY - CurMidY) / 5;
-        }
+//        float CurMidY = mHeight * (mMaxProgress - mCurrentProgress) / mMaxProgress;
+//        if (mAllowProgressInBothDirections || mWaveY > CurMidY) {
+//            mWaveY = mWaveY - (mWaveY - CurMidY) / 10;
+//            mWaveLowestY = mWaveLowestY - (mWaveLowestY - CurMidY) / 5;
+//        }
+//
+//        mPath.moveTo(0-mBezierDiffX, mWaveY);
+//
+//        mPath.cubicTo(mBezierDiffX, mWaveY - (mWaveLowestY - mWaveY),
+//                mBezierDiffX + mWidth / 2, mWaveLowestY, mWidth, mWaveY);
+//        mPath.lineTo(mWidth, mHeight);
+//        mPath.lineTo(0, mHeight);
+//        mPath.close();
+//        canvas.drawPath(mPath, mPathPaint);
 
-        mPath.moveTo(0-mBezierDiffX, mWaveY);
 
-        mPath.cubicTo(mBezierDiffX, mWaveY - (mWaveLowestY - mWaveY),
-                mBezierDiffX + mWidth / 2, mWaveLowestY, mWidth, mWaveY);
-        mPath.lineTo(mWidth, mHeight);
-        mPath.lineTo(0, mHeight);
-        mPath.close();
-        canvas.drawPath(mPath, mPathPaint);
+        float mWaveHeight = mHeight * mCurrentProgress / mMaxProgress;
+
+        mPath.moveTo(mWidth + mOffset, mHeight - mWaveHeight);//因为 y 轴正方向是向下的，所以减去水波纹的高度
+        mPath.lineTo(mWidth + mOffset, mHeight);//绘制右边的线段
+        mPath.lineTo(-mWidth + mOffset, mHeight);//绘制底部的线段
+        mPath.lineTo(-mWidth + mOffset, mHeight - mWaveHeight);//绘制左边的线段
+
+        mPath.quadTo((-mWidth * 3 / 4) + mOffset, mHeight - mWaveHeight + mFu, (-mWidth / 2) + mOffset, mHeight - mWaveHeight); //画出第一段波纹的第一条曲线
+        mPath.quadTo((-mWidth / 4) + mOffset, mHeight - mWaveHeight - mFu, 0 + mOffset, mHeight - mWaveHeight); //画出第一段波纹的第二条曲线
+        mPath.quadTo((mWidth / 4) + mOffset, mHeight - mWaveHeight + mFu, (mWidth / 2) + mOffset, mHeight - mWaveHeight); //画出第二段波纹的第一条曲线
+        mPath.quadTo((mWidth * 3 / 4) + mOffset, mHeight - mWaveHeight - mFu, mWidth + mOffset, mHeight - mWaveHeight);  //画出第二段波纹的第二条曲线
+
+        mPath.close();//封闭曲线
+        canvas.drawPath(mPath, mPathPaint);//绘制曲线
 
         int min = Math.min(mWidth, mHeight);
         mBackgroundBitmap = Bitmap.createScaledBitmap(mBackgroundBitmap, min, min, false);
