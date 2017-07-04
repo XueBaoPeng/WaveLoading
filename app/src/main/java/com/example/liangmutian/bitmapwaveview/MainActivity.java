@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
             progress++;
             switch (msg.what) {
                 case one:
-                    if (progress <= 50) {
+                    if (progress <= 100) {
                         coustomView.setCurrent(progress, progress + "%");
                         sendEmptyMessageDelayed(one, 50);
                     }

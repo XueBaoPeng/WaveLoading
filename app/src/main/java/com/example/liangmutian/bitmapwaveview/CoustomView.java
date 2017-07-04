@@ -38,18 +38,9 @@ public class CoustomView extends View {
 
     private int mMaxProgress = 100;
     private int mCurrentProgress = 0;
-    private float mCurY;//上次波浪中线的y轴坐标
 
-    private float mDistance = 0;
-    private int mRefreshGap = 10;
     private int mFu;//水波纹的振幅
     private int mOffset;//水波纹移动的偏移值
-    /**
-     * Y方向上的每次增长值
-     */
-    private int increateHeight;
-
-    private boolean mAllowProgressInBothDirections = false;
 
     //设置当前进度值和当前显示的文字
     public void setCurrent(int currentProgress, String currentText) {
@@ -74,9 +65,6 @@ public class CoustomView extends View {
         this.mWaveColor = mWaveColor;
     }
 
-    public void allowProgressInBothDirections(boolean allow) {
-        this.mAllowProgressInBothDirections = allow;
-    }
 
     public CoustomView(Context context) {
         this(context, null);
@@ -97,6 +85,7 @@ public class CoustomView extends View {
         } else {
             mBackgroundBitmap = getBitmapFromDrawable(getBackground());
         }
+
         /**
          * 波浪画笔
          */
@@ -104,6 +93,7 @@ public class CoustomView extends View {
         mPathPaint = new Paint();
         mPathPaint.setAntiAlias(true);//抗锯齿
         mPathPaint.setStyle(Paint.Style.FILL);
+
         /**
          * 进度画笔
          */
@@ -111,29 +101,15 @@ public class CoustomView extends View {
         mTextPaint.setAntiAlias(true);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
 
-        ValueAnimator animator = ValueAnimator.ofInt(0, mWidth);//设置移动范围为一个屏幕宽度
-        animator.setDuration(1000);//设置持续时间为1秒
-        animator.setRepeatCount(ValueAnimator.INFINITE);//设置为无限循环
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                int value = (int) animation.getAnimatedValue();
-                mOffset = value;//修改偏移量
-                invalidate();//刷新界面
-            }
-        });
-        animator.start();
-        mBezierDiffX = INCREATE_WIDTH;
-        mWaveLowestY = 1.2f * mHeight;
         mOffset = 0;//水波纹移动的偏移值
-        mFu = 100;//波浪的振幅
+        mFu = 50;//波浪的振幅
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         mWidth = MeasureSpec.getSize(widthMeasureSpec);
-        mWaveY = mHeight = MeasureSpec.getSize(heightMeasureSpec);
+        mHeight = MeasureSpec.getSize(heightMeasureSpec);
     }
 
 
@@ -144,36 +120,21 @@ public class CoustomView extends View {
         }
     }
 
-    /**
-     * 水波纹的X左边是否在增长
-     */
-    private boolean mIsXDiffIncrease = true;
-    /**
-     * X方向上的每次增长值
-     */
-    private final int INCREATE_WIDTH = 0x00000005;
-    /**
-     * 贝塞尔曲线控制点距离原点x的增量
-     */
-    private float mBezierDiffX;
-
-    private void checkIncrease(float mBezierDiffX) {
-        if (mIsXDiffIncrease) {
-            mIsXDiffIncrease = mBezierDiffX > 0.5 * mWidth ? !mIsXDiffIncrease : mIsXDiffIncrease;
-        } else {
-            mIsXDiffIncrease = mBezierDiffX < 10 ? !mIsXDiffIncrease : mIsXDiffIncrease;
-        }
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        ValueAnimator animator = ValueAnimator.ofInt(0, mWidth);//设置移动范围为一个屏幕宽度
+        animator.setDuration(2000);//设置持续时间为1秒
+        animator.setRepeatCount(ValueAnimator.INFINITE);//设置为无限循环
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                mOffset = (int) animation.getAnimatedValue();//修改偏移量
+                postInvalidate();//刷新界面
+            }
+        });
+        animator.start();
     }
-
-    /**
-     * 水波纹最低控制点y
-     */
-    private float mWaveLowestY;
-
-    /**
-     * 当前波纹的y值
-     */
-    private float mWaveY;
 
     private Bitmap createBitmap() {
         mPathPaint.setColor(Color.parseColor(mWaveColor));
@@ -181,33 +142,11 @@ public class CoustomView extends View {
         mTextPaint.setTextSize(mTextSize);
         mPath.reset();
 
-        if (mIsXDiffIncrease) {
-            mBezierDiffX += INCREATE_WIDTH;
-        } else {
-            mBezierDiffX -= INCREATE_WIDTH;
-        }
-        checkIncrease(mBezierDiffX);
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         Bitmap finalBmp = Bitmap.createBitmap(mWidth, mHeight, Bitmap.Config.ARGB_8888);
 
         Canvas canvas = new Canvas(finalBmp);
-
-//        float CurMidY = mHeight * (mMaxProgress - mCurrentProgress) / mMaxProgress;
-//        if (mAllowProgressInBothDirections || mWaveY > CurMidY) {
-//            mWaveY = mWaveY - (mWaveY - CurMidY) / 10;
-//            mWaveLowestY = mWaveLowestY - (mWaveLowestY - CurMidY) / 5;
-//        }
-//
-//        mPath.moveTo(0-mBezierDiffX, mWaveY);
-//
-//        mPath.cubicTo(mBezierDiffX, mWaveY - (mWaveLowestY - mWaveY),
-//                mBezierDiffX + mWidth / 2, mWaveLowestY, mWidth, mWaveY);
-//        mPath.lineTo(mWidth, mHeight);
-//        mPath.lineTo(0, mHeight);
-//        mPath.close();
-//        canvas.drawPath(mPath, mPathPaint);
-
 
         float mWaveHeight = mHeight * mCurrentProgress / mMaxProgress;
 
