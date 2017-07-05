@@ -1,82 +1,30 @@
 package com.example.liangmutian.bitmapwaveview;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 
 /**
- * @author lizhangqu
- *         <p>
- *         2015-3-5
+ * xbp
  */
 public class CustomAView extends View {
-    private PorterDuffXfermode porterDuffXfermode;// Xfermode
-    private Paint paint;// 画笔
-    private Bitmap bitmap;// 源图片
-    private int width, height;// 控件宽高
-    private Path path;// 画贝塞尔曲线需要用到
-    private Canvas mCanvas;// 在该画布上绘制目标图片
-    private Bitmap bg;// 目标图片
 
-    private float controlX, controlY;// 贝塞尔曲线控制点，使用三阶贝塞尔曲线曲线，需要两个控制点，两个控制点都在该变量基础上生成
-    private float waveY;// 上升的高度
+    private int mXPoint = 200;//原点的X坐标
+    private int mYPoint = 800;
 
-    private Paint mTextPaint;
-    private String mCurrentText = "";
-    private String mTextColor = "#FFFFFF";
-    private int mTextSize = 41;
+    public int mXScale = 100;//
+    public int mYScale = 100;
 
-    private int mMaxProgress = 100;
-    private int mCurrentProgress = 0;
+    private int XLength = 680;
+    private int YLength = 640;
 
-    private boolean isIncrease;// 用于控制控制点水平移动
-
-    private boolean isReflesh = true;// 是否刷新并产生填充效果，默认为true
-
-    //设置当前进度值和当前显示的文字
-    public void setCurrent(int currentProgress, String currentText) {
-        this.mCurrentProgress = currentProgress;
-        this.mCurrentText = currentText;
-    }
-
-    //设置当前进度值和当前显示的文字
-    public void setMaxProgress(int maxProgress) {
-        this.mMaxProgress = maxProgress;
-    }
-
-    //设置显示文字的大小和颜色
-    public void setText(String mTextColor, int mTextSize) {
-        this.mTextColor = mTextColor;
-        this.mTextSize = mTextSize;
-    }
-
-    /**
-     * @return 是否刷新
-     */
-    public boolean isReflesh() {
-        return isReflesh;
-    }
-
-    /**
-     * 提供接口设置刷新
-     *
-     * @param isReflesh
-     */
-    public void setReflesh(boolean isReflesh) {
-        this.isReflesh = isReflesh;
-        //重绘
-        postInvalidate();
-    }
+    public String[] XLabel = new String[]{"周一", "周二", "周三", "周四", "周五", "周六", "周日"};    //X的刻度
+    public String[] YLabel = new String[]{"", "50", "100", "150", "200", "250", "300", "350"};    //Y的刻度
+    public String[] mData = new String[]{"150", "230", "10", "136", "45", "40", "112", "313"};      //数据
+    public String Title;    //显示的标题
 
     /**
      * @param context
@@ -103,161 +51,81 @@ public class CustomAView extends View {
         init();
     }
 
+    Paint paint;
+    Paint paint1;
+
     /**
      * 初始化变量
      */
     private void init() {
-
-        if (null == getBackground()) {
-            throw new IllegalArgumentException(String.format("background is null."));
-        } else {
-            // 获得资源文件
-            bitmap = getBitmapFromDrawable(getBackground());
-        }
-             /**
-            * 进度画笔
-               */
-        mTextPaint = new Paint();
-        mTextPaint.setAntiAlias(true);
-        mTextPaint.setTextAlign(Paint.Align.CENTER);
-        // 初始化画笔
         paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setDither(true);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.parseColor("#ffc9394a"));
-        // 设置宽高为图片的宽高
-        width = bitmap.getWidth();
-        height = bitmap.getHeight();
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setAntiAlias(true);//去锯齿
+        paint.setColor(Color.parseColor("#ff02f2"));//颜色
+        paint1 = new Paint();
+        paint1.setStyle(Paint.Style.STROKE);
+        paint1.setAntiAlias(true);//去锯齿
+        paint1.setColor(Color.DKGRAY);
+        paint.setTextSize(12);  //设置轴文字大小
+    }
 
-        // 初始状态值
-        waveY = 7 / 8F * height;
-        controlY = 17 / 16F * height;
-
-        // 初始化Xfermode
-        porterDuffXfermode = new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
-        // 初始化path
-        path = new Path();
-        // 初始化画布
-        mCanvas = new Canvas();
-        // 创建bitmap
-        bg = Bitmap.createBitmap(width, height, Config.ARGB_8888);
-        // 将新建的bitmap注入画布
-        mCanvas.setBitmap(bg);
-
+    public void SetInfo(String[] XLabel, String[] YLable, String[] mData) {
+        this.XLabel = XLabel;
+        this.YLabel = YLable;
+        this.mData = mData;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        // 画目标图，存在bg上
-        drawTargetBitmap();
-        // 将目标图绘制在当前画布上，起点为左边距，上边距的交点
-        canvas.drawBitmap(bg, getPaddingLeft(), getPaddingTop(), null);
-        if (isReflesh) {
-            // 重绘，使用boolean变量isReflesh进行控制，并对外提供访问的接口,默认为true且刷新
-            invalidate();
-        }
-    }
+        super.onDraw(canvas);
+        canvas.drawColor(Color.WHITE);
+        //画Y轴
+        canvas.drawLine(mXPoint, mYPoint, mXPoint, mYPoint - YLength, paint);
 
-    private void drawTargetBitmap() {
-        // 重置path
-        path.reset();
-        // 擦除像素
-        bg.eraseColor(Color.parseColor("#00ffffff"));
+        canvas.drawLine(mXPoint, mYPoint - YLength, mXPoint - 4, mYPoint - YLength + 6, paint);
+        canvas.drawLine(mXPoint, mYPoint - YLength, mXPoint + 4, mYPoint - YLength + 6, paint);
 
-        // 当控制点的x坐标大于或等于终点x坐标时更改标识值
-        if (controlX >= width + 1 / 2 * width) {
-            isIncrease = false;
-        }
-        // 当控制点的x坐标小于或等于起点x坐标时更改标识值
-        else if (controlX <= -1 / 2 * width) {
-            isIncrease = true;
-        }
-        // 根据标识值判断当前的控制点x坐标是该加还是减
-        controlX = isIncrease ? controlX + 10 : controlX - 10;
-        if (controlY >= 0) {
-            // 波浪上移
-            controlY -= 1;
-            waveY -= 1;
-        } else {
-            // 超出则重置位置
-            waveY = 7 / 8F * height;
-            controlY = 17 / 16F * height;
+        for (int i = 0; i * mYScale < YLength; i++) {
+            canvas.drawLine(mXPoint, mYPoint - i * mYScale, mXPoint + 5, mYPoint - i * mYScale, paint);
+            try {
+                canvas.drawText(YLabel[i], mXPoint - 22, mYPoint - i * mYScale + 5, paint);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
 
-        // 贝塞尔曲线的生成
-        path.moveTo(0, waveY);
-        // 两个控制点通过controlX，controlY生成
-        path.cubicTo(controlX / 2, waveY - (controlY - waveY),
-                (controlX + width) / 2, controlY, width, waveY);
-        // 与下下边界闭合
-        path.lineTo(width, height);
-        path.lineTo(0, height);
-        // 进行闭合
-        path.close();
-        // http://blog.csdn.net/aigestudio/article/details/41960507
+        canvas.drawLine(mXPoint, mYPoint, mXPoint + XLength, mYPoint, paint);
 
-        mCanvas.drawBitmap(bitmap, 0, 0, paint);// 画慕课网logo
-        paint.setXfermode(porterDuffXfermode);// 设置Xfermode
-        mCanvas.drawPath(path, paint);// 画三阶贝塞尔曲线
-        paint.setXfermode(null);// 重置Xfermode
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        // 获得宽高测量模式和大小
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-        // 保存测量结果
-        int width, height;
-        if (widthMode == MeasureSpec.EXACTLY) {
-            // 宽度
-            width = widthSize;
-        } else {
-            // 宽度加左右内边距
-            width = this.width + getPaddingLeft() + getPaddingRight();
-            if (widthMode == MeasureSpec.AT_MOST) {
-                // 取小的那个
-                width = Math.min(width, widthSize);
+        for (int i = 0; i * mXScale < XLength; i++) {
+            canvas.drawLine(mXPoint + mXScale * i, mYPoint, mXPoint + i * mXScale, mYPoint - 5, paint);
+            try {
+                canvas.drawText(XLabel[i], mXPoint + mXScale * i + 20, mYPoint + 20, paint);
+                //数据值
+                if (i > 0 && getYPoint(mData[i - 1]) != -999 && getYPoint(mData[i]) != -999)  //保证有效数据
+                    canvas.drawLine(mXPoint + (i - 1) * mXScale, getYPoint(mData[i - 1]), mXPoint + i * mXScale, getYPoint(mData[i]), paint);
+                canvas.drawCircle(mXPoint + i * mXScale, getYPoint(mData[i]), 2, paint);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
-        if (heightMode == MeasureSpec.EXACTLY) {
-            // 高度
-            height = heightSize;
-        } else {
-            // 高度加左右内边距
-            height = this.height + getPaddingTop() + getPaddingBottom();
-            ;
-            if (heightMode == MeasureSpec.AT_MOST) {
-                // 取小的那个
-                height = Math.min(height, heightSize);
-            }
-        }
-        // 设置高度宽度为logo宽度和高度,实际开发中应该判断MeasureSpec的模式，进行对应的逻辑处理,这里做了简单的判断测量
-        setMeasuredDimension(width, height);
+        canvas.drawLine(mXPoint + XLength, mYPoint, mXPoint + XLength - 6, mYPoint + 3, paint);
+        canvas.drawLine(mXPoint + XLength, mYPoint, mXPoint + XLength - 6, mYPoint - 3, paint);
     }
 
-    private Bitmap getBitmapFromDrawable(Drawable drawable) {
+    private int getYPoint(String y0) {
 
-        if (drawable == null) {
-            return null;
-        }
-
-        if (drawable instanceof BitmapDrawable) {
-            return ((BitmapDrawable) drawable).getBitmap();
-        }
-
+        int y;
         try {
-            Bitmap bitmap;
-            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(bitmap);
-            drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-            drawable.draw(canvas);
-            return bitmap;
-        } catch (OutOfMemoryError e) {
-            return null;
+            y = Integer.parseInt(y0);
+        } catch (Exception e) {
+            return -999;    //出错则返回-999
         }
+        try {
+            return mYPoint - y * mYScale / Integer.parseInt(YLabel[1]);
+        } catch (Exception e) {
+        }
+        return y;
     }
+
 }

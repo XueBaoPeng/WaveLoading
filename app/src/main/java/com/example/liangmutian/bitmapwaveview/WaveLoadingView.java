@@ -17,7 +17,6 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.ScaleAnimation;
 
 /**
  * Created by xbp on 2017/7/4.
@@ -141,7 +140,7 @@ public class WaveLoadingView extends View {
             }
         });
         animator.start();
-        LinearGradient lg = new LinearGradient(0,0, 0, mBackgroundHeight, DEFAULT_START_COLOR, DEFAULT_END_COLOR, Shader.TileMode.REPEAT);
+        LinearGradient lg = new LinearGradient(0, 0, 0, mBackgroundHeight, DEFAULT_START_COLOR, DEFAULT_END_COLOR, Shader.TileMode.REPEAT);
         mWavePaint.setShader(lg);
 
         mfinalShowBitmap = Bitmap.createBitmap(mBackgroundWidth, mBackgroundHeight, Bitmap.Config.ARGB_8888);

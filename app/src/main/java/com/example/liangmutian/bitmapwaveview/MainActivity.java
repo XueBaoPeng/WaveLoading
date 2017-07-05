@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
     WaveLoadingView coustomView;
+    CustomAView customAView;
     private int progress;
     private static final int one = 0X0001;
     private Handler handler = new Handler() {
@@ -21,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
                 case one:
                     if (progress <= 100) {
                         coustomView.setCurrent(progress);
-                        sendEmptyMessageDelayed(one, 200);
+                        sendEmptyMessageDelayed(one, 100);
                         if (progress == 98) {
                             PropertyValuesHolder px = PropertyValuesHolder.ofFloat("scaleX", 1f, 1.2f,1f,1.2f,1f);
                             PropertyValuesHolder py = PropertyValuesHolder.ofFloat("scaleY", 1f, 1.2f,1f,1.2f,1f);
@@ -37,13 +38,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        coustomView = (WaveLoadingView) findViewById(R.id.radio);
-        handler.sendEmptyMessageDelayed(one, 2000);
-        coustomView.setOnLoadinFinishListener(new WaveLoadingView.OnLoadinFinishListener() {
-            @Override
-            public void LoadingComplete() {
-            }
-        });
+        customAView= (CustomAView) findViewById(R.id.custom);
+//        coustomView = (WaveLoadingView) findViewById(R.id.radio);
+//        handler.sendEmptyMessageDelayed(one, 2000);
+//        coustomView.setOnLoadinFinishListener(new WaveLoadingView.OnLoadinFinishListener() {
+//            @Override
+//            public void LoadingComplete() {
+//            }
+//        });
     }
 
 }
