@@ -1,7 +1,8 @@
 <resources>
-    <declare-styleable name="bitmapWave">
-        <attr name="backbitmap" format="reference"/>
-        <attr name="overColor" format="color"/>
-
+    <declare-styleable name="WaveLoadingView">
+        <attr name="WaveTextSize" format="dimension"/>
+        <attr name="WaveTextColor" format="color"/>
+        <attr name="WaveMaxProgress" format="integer"/>
+        <attr name="WaveAmplitude" format="dimension"/>
     </declare-styleable>
 </resources>
